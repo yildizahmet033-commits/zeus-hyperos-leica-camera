@@ -27,6 +27,8 @@ BYTE_PATCHES = [
     #     this camera version on zeus; type "11" loads Smooth / Slender / Big eyes.
     ("classes.dex", 0x849930, "1a01df10", "1a010211", "f0.a0.l(): beauty tab type \"1\" -> \"11\""),
     ("classes.dex", 0x849c3e, "1a013e11", "1a010211", "f0.a0.v(): beauty tab type \"2\" -> \"11\""),
+    # --- Camera settings: the Fastshot entry opens a HyperOS-only Settings page (crash on AOSP)
+    ("classes.dex", 0x7eaed0, "38010d00", "280d0000", "CameraCapturePreferenceFragment: hide the Fastshot settings entry"),
     # --- Zoom (w5.E.P0 = applyZoomRatio)
     ("classes2.dex", 0x862a4a, "38020600", "28060000", "applyZoomRatio: skip Math.max(zoom, 1.0) clamp"),
     ("classes2.dex", 0x862bd4, "6e30661e7d06", "000000000000", "applyZoomRatio: do not override zoomRatio with SCALER_CROP_REGION"),
@@ -38,10 +40,6 @@ BYTE_PATCHES = [
     #     looked at getAvailableCaptureRequestKeys(), so bokeh, 60 FPS, beautify,
     #     smoothTransition, MFNR... were never sent. Always use getAllVendorKeys().
     ("classes2.dex", 0x880a96, "38042a00", "00000000", "w5.c: always discover all vendor request keys"),
-    # --- Portrait capture (w5.s0.x): on zeus the parallel-still path asked for output
-    #     stream 5, which the portrait session does not have -> null Size -> capture hang.
-    #     Use stream 1, like devices where G6.c.M() is true.
-    ("classes2.dex", 0x897b6a, "39020d00", "280d0000", "w5.s0.x: portrait capture uses an existing output stream"),
     # --- Leica Authentic / Leica Portrait (patches by Joshaby, miuicamera-cupid): the zeus HAL
     #     has no com.xiaomi.sessionparams.stylizationType tag, so use the app's own GPU
     #     style renderer (CvStyleFilterRender / CvShadingRender, lut_cvstyle_*).
@@ -62,8 +60,8 @@ FOCAL_HEAD = ".method public static c(Landroid/hardware/camera2/CaptureResult;)F
 # Expected results after the byte patches. classes2.dex and classes3.dex are then rebuilt
 # by smali, whose metadata layout can vary; their code is checked by the smali steps.
 EXPECTED = {
-    "classes.dex": "9ac575a474b5595ea2d91d8619f22538196c0d64cb0c963505975524acd3d187",
-    "classes2.dex": "36d240730aa0ed35b45a3ace87aa8a35d451a4fe4e7281be8159a8c0aa4f775d",
+    "classes.dex": "ae4db87c34d0d5eb12b420f71ac1a20bf4d43263f71b788d7dcd61e3fdce500d",
+    "classes2.dex": "7029181384ab3b04fc3559c3dc209808db489fdd0ef7dd957515ed54629b70a7",
 }
 
 
@@ -125,9 +123,43 @@ def patch_smali(work, java, smali, baksmali):
     shutil.rmtree(out)
 
 
-def patch_focal(work, java, smali, baksmali):
-    out = os.path.join(work, "classes2_smali")
-    dex = os.path.join(work, "classes2.dex")
+def edit(out, name, head, subs):
+    """Edit one method of a smali class; every pattern must match exactly once."""
+    p = os.path.join(out, *name.split("/")) + ".smali"
+    s = open(p).read()
+    if s.count(head) != 1:
+        sys.exit(f"ERROR: {name} {head} not found - wrong APK?")
+    a = s.index(head)
+    b = s.index(".end method", a)
+    m = s[a:b]
+    for pat, new in subs:
+        m, n = re.subn(pat, lambda x: x.expand(new), m, flags=re.S)
+        if n != 1:
+            sys.exit(f"ERROR: {name}: pattern matched {n} times")
+    open(p, "w").write(s[:a] + m + s[b:])
+
+
+def patch_classes(work, java, smali, baksmali):
+    out, dex = os.path.join(work, "classes_smali"), os.path.join(work, "classes.dex")
+    run([java, "-Xmx6g", "-jar", baksmali, "d", dex, "-a", "29", "-o", out])
+    # Fastshot (street) mode cannot open the camera (found by MICKY)
+    edit(out, "com/android/camera/features/mode/street/StreetModuleEntry", ".method public support()Z",
+         [(r"\.registers 1.*", ".registers 1\n\n    const/4 p0, 0x0\n\n    return p0\n")])
+    print("  [ok] classes.dex StreetModuleEntry.support(): false")
+    # Rear video bokeh: the HAL node (com.mi.node.rearvideo) only has room for 1280x720,
+    # so do not raise the quality to 1080p30 (spot found by MICKY). Front bokeh keeps 1080p30.
+    edit(out, "b0/V", " q(Lb0/O0$a;Ljava/util/ArrayList;ILw5/c;I)V",
+         [(r"(move-result v6\s+if-nez v6, (:\w+)\s+:cond_\w+\n)(\s+const/16 v6, 0x600\s+iput v6, v1, Lb0/O0\$a;->b:I\s+const/16 v7, 0x61e)",
+           r"\1    invoke-static {}, Lcom/android/camera/data/data/j;->a1()Z\n\n    move-result v6\n\n"
+           r"    if-eqz v6, :zeus_1080\n\n    invoke-static {}, LY/a;->f()Le0/p;\n\n    move-result-object v6\n\n"
+           r"    invoke-virtual {v6}, Le0/p;->K()Z\n\n    move-result v6\n\n    if-eqz v6, \2\n\n    :zeus_1080\n\3")])
+    print("  [ok] classes.dex b0.V.q(): rear video bokeh stays at 720p30")
+    run([java, "-Xmx8g", "-jar", smali, "a", out, "--api", "29", "-o", dex])
+    shutil.rmtree(out)
+
+
+def patch_classes2(work, java, smali, baksmali):
+    out, dex = os.path.join(work, "classes2_smali"), os.path.join(work, "classes2.dex")
     run([java, "-Xmx6g", "-jar", baksmali, "d", dex, "-a", "29", "-o", out])
     p = os.path.join(out, FOCAL_CLASS)
     s = open(p).read()
@@ -138,6 +170,12 @@ def patch_focal(work, java, smali, baksmali):
     s = s[:a] + open(os.path.join(HERE, "focal35.smali")).read().strip() + s[b:]
     open(p, "w").write(s)
     print("  [ok] classes2.dex w5.G.c(): focal length fallback (24 / 14 / 25 / 47 mm * zoom)")
+    # Still capture: use the binning stream (5) when the session has one (Ultra HD in low light),
+    # otherwise stream 1 (the portrait session on zeus has no stream 5 and the capture hung).
+    edit(out, "w5/s0", ".method public final x()Landroid/hardware/camera2/CaptureRequest$Builder;",
+         [(r"(const/4 v2, 0x5\s+invoke-virtual \{v5, v2\}, Lw5/A0;->n\(I\)Landroid/view/Surface;\s+move-result-object v2\s+)goto (:goto_\w+)(\s+:(?:goto|cond)_\w+)",
+           r"\1if-nez v2, \2\3")])
+    print("  [ok] classes2.dex w5.s0.x(): binning stream if present, else stream 1")
     run([java, "-Xmx8g", "-jar", smali, "a", out, "--api", "29", "-o", dex])
     shutil.rmtree(out)
 
@@ -172,8 +210,9 @@ def main():
             if sha256(os.path.join(work, n)) != h:
                 sys.exit(f"ERROR: {n} does not match the tested build")
             print(f"  [ok] {n} matches the tested build")
-        print("[3/6] smali patches (classes2.dex, classes3.dex)")
-        patch_focal(work, a.java, a.smali, a.baksmali)
+        print("[3/6] smali patches (classes.dex, classes2.dex, classes3.dex)")
+        patch_classes(work, a.java, a.smali, a.baksmali)
+        patch_classes2(work, a.java, a.smali, a.baksmali)
         patch_smali(work, a.java, a.smali, a.baksmali)
 
         print("[4/6] Building APK (+ HyperOS stub classes as classes8.dex)")
