@@ -15,6 +15,11 @@ if [ "$DEVICE" != "zeus" ] && [ "$(getprop ro.build.product)" != "zeus" ]; then
     ui_print "! Camera features may not work on other devices."
 fi
 
+# ROMs with this camera built in (system/priv-app/LeicaMiuiCamera) would end up with it twice.
+if [ -d /system/priv-app/LeicaMiuiCamera ]; then
+    abort "! This ROM already includes the HyperOS Leica Camera, the module is not needed."
+fi
+
 if [ -d /data/adb/modules/cupid-miuicamera ] && [ ! -f /data/adb/modules/cupid-miuicamera/remove ]; then
     ui_print "! Found old 'cupid-miuicamera' module."
     ui_print "! Remove it before rebooting, otherwise both will conflict."

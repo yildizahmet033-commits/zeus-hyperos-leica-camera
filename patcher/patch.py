@@ -42,6 +42,11 @@ BYTE_PATCHES = [
     #     stream 5, which the portrait session does not have -> null Size -> capture hang.
     #     Use stream 1, like devices where G6.c.M() is true.
     ("classes2.dex", 0x897b6a, "39020d00", "280d0000", "w5.s0.x: portrait capture uses an existing output stream"),
+    # --- Leica Authentic / Leica Portrait (patches by Joshaby, miuicamera-cupid): the zeus HAL
+    #     has no com.xiaomi.sessionparams.stylizationType tag, so use the app's own GPU
+    #     style renderer (CvStyleFilterRender / CvShadingRender, lut_cvstyle_*).
+    ("classes2.dex", 0x8312b0, "1212", "1202", "pb.d0.a1(): pb_leica_key defaults to false (run the GPU Leica style)"),
+    ("classes3.dex", 0x7303e8, "20003b23", "12100000", "device_common.l3(): always true (was: instance-of fuxi)"),
 ]
 
 # smali edit on classes3.dex: zeus zoom lists start at 0.5x, the HAL's minimum is 0.65x.
@@ -49,11 +54,16 @@ SMALI_CLASS = "zeus.smali"
 SMALI_METHODS = ("i1", "n1", "q0")
 SMALI_FROM = re.compile(r"const/high16 (v\d+), 0x3f000000(\s+# 0\.5f)?")
 
-# Expected results (identical to the tested module build). classes3.dex is rebuilt
-# by smali, whose metadata layout can vary; its code is checked by the smali step.
+# smali edit on classes2.dex: the zeus HAL has no focalLength35mm tag, which blanked the whole
+# exposure line of the watermark. w5.G.c() now falls back to the lens' 35 mm equivalent * zoom.
+FOCAL_CLASS = os.path.join("w5", "G.smali")
+FOCAL_HEAD = ".method public static c(Landroid/hardware/camera2/CaptureResult;)F"
+
+# Expected results after the byte patches. classes2.dex and classes3.dex are then rebuilt
+# by smali, whose metadata layout can vary; their code is checked by the smali steps.
 EXPECTED = {
     "classes.dex": "9ac575a474b5595ea2d91d8619f22538196c0d64cb0c963505975524acd3d187",
-    "classes2.dex": "bfafa2e434b42aad71e9f479aa7d206d0241c1e21b4a2bbf6ade6c4338829874",
+    "classes2.dex": "36d240730aa0ed35b45a3ace87aa8a35d451a4fe4e7281be8159a8c0aa4f775d",
 }
 
 
@@ -115,6 +125,23 @@ def patch_smali(work, java, smali, baksmali):
     shutil.rmtree(out)
 
 
+def patch_focal(work, java, smali, baksmali):
+    out = os.path.join(work, "classes2_smali")
+    dex = os.path.join(work, "classes2.dex")
+    run([java, "-Xmx6g", "-jar", baksmali, "d", dex, "-a", "29", "-o", out])
+    p = os.path.join(out, FOCAL_CLASS)
+    s = open(p).read()
+    if s.count(FOCAL_HEAD) != 1:
+        sys.exit("ERROR: w5.G.c() not found - wrong APK?")
+    a = s.index(FOCAL_HEAD)
+    b = s.index(".end method", a) + len(".end method")
+    s = s[:a] + open(os.path.join(HERE, "focal35.smali")).read().strip() + s[b:]
+    open(p, "w").write(s)
+    print("  [ok] classes2.dex w5.G.c(): focal length fallback (24 / 14 / 25 / 47 mm * zoom)")
+    run([java, "-Xmx8g", "-jar", smali, "a", out, "--api", "29", "-o", dex])
+    shutil.rmtree(out)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--apk", required=True, help="original HyperOS Camera 1+6.2.000360.1 APK")
@@ -141,13 +168,13 @@ def main():
 
         print("[2/6] Byte patches (classes.dex, classes2.dex)")
         patch_bytes(work)
-        print("[3/6] smali patch (classes3.dex)")
-        patch_smali(work, a.java, a.smali, a.baksmali)
-
         for n, h in EXPECTED.items():
             if sha256(os.path.join(work, n)) != h:
                 sys.exit(f"ERROR: {n} does not match the tested build")
             print(f"  [ok] {n} matches the tested build")
+        print("[3/6] smali patches (classes2.dex, classes3.dex)")
+        patch_focal(work, a.java, a.smali, a.baksmali)
+        patch_smali(work, a.java, a.smali, a.baksmali)
 
         print("[4/6] Building APK (+ HyperOS stub classes as classes8.dex)")
         shutil.copy(os.path.join(HERE, "stubs", "hyperos-stubs.dex"), os.path.join(work, "classes8.dex"))
