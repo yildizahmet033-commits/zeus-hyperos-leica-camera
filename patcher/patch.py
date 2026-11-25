@@ -15,7 +15,10 @@ Required tools on PATH: java, keytool (if no key given), zipalign, apksigner, zi
 """
 import argparse, hashlib, os, re, shutil, struct, subprocess, sys, tempfile, zipfile, zlib
 
+sys.dont_write_bytecode = True
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from add_turkish import add_turkish
 REPO = os.path.dirname(HERE)
 
 # The only APK these byte offsets are valid for.
@@ -154,6 +157,8 @@ def patch_classes(work, java, smali, baksmali):
            r"    if-eqz v6, :zeus_1080\n\n    invoke-static {}, LY/a;->f()Le0/p;\n\n    move-result-object v6\n\n"
            r"    invoke-virtual {v6}, Le0/p;->K()Z\n\n    move-result v6\n\n    if-eqz v6, \2\n\n    :zeus_1080\n\3")])
     print("  [ok] classes.dex b0.V.q(): rear video bokeh stays at 720p30")
+    smali_diff(out, "classes")
+    print("  [ok] classes.dex Monet switch (off by default), default focal length")
     run([java, "-Xmx8g", "-jar", smali, "a", out, "--api", "29", "-o", dex])
     shutil.rmtree(out)
 
@@ -176,6 +181,22 @@ def patch_classes2(work, java, smali, baksmali):
          [(r"(const/4 v2, 0x5\s+invoke-virtual \{v5, v2\}, Lw5/A0;->n\(I\)Landroid/view/Surface;\s+move-result-object v2\s+)goto (:goto_\w+)(\s+:(?:goto|cond)_\w+)",
            r"\1if-nez v2, \2\3")])
     print("  [ok] classes2.dex w5.s0.x(): binning stream if present, else stream 1")
+    smali_diff(out, "classes2")
+    print("  [ok] classes2.dex w5.d.o(): focal length fallback (0 mm fix), Monet switch")
+    run([java, "-Xmx8g", "-jar", smali, "a", out, "--api", "29", "-o", dex])
+    shutil.rmtree(out)
+
+
+def smali_diff(out, name):
+    """Apply patcher/v1.3/<name>.patch (Monet switch by Joshaby, focal length fallback)."""
+    run(["patch", "-p1", "-s", "-d", out, "-i", os.path.join(HERE, "v1.3", name + ".patch")])
+
+
+def patch_classes6(work, java, smali, baksmali):
+    out, dex = os.path.join(work, "classes6_smali"), os.path.join(work, "classes6.dex")
+    run([java, "-Xmx6g", "-jar", baksmali, "d", dex, "-a", "29", "-o", out])
+    smali_diff(out, "classes6")
+    print("  [ok] classes6.dex switch colors follow Monet / the camera color")
     run([java, "-Xmx8g", "-jar", smali, "a", out, "--api", "29", "-o", dex])
     shutil.rmtree(out)
 
@@ -201,7 +222,7 @@ def main():
     work = tempfile.mkdtemp(prefix="leica-zeus-")
     try:
         with zipfile.ZipFile(a.apk) as z:
-            for n in ("classes.dex", "classes2.dex", "classes3.dex"):
+            for n in ("classes.dex", "classes2.dex", "classes3.dex", "classes6.dex", "resources.arsc"):
                 z.extract(n, work)
 
         print("[2/6] Byte patches (classes.dex, classes2.dex)")
@@ -210,10 +231,15 @@ def main():
             if sha256(os.path.join(work, n)) != h:
                 sys.exit(f"ERROR: {n} does not match the tested build")
             print(f"  [ok] {n} matches the tested build")
-        print("[3/6] smali patches (classes.dex, classes2.dex, classes3.dex)")
+        print("[3/6] smali patches (classes.dex, classes2.dex, classes3.dex, classes6.dex)")
         patch_classes(work, a.java, a.smali, a.baksmali)
         patch_classes2(work, a.java, a.smali, a.baksmali)
         patch_smali(work, a.java, a.smali, a.baksmali)
+        patch_classes6(work, a.java, a.smali, a.baksmali)
+        arsc = os.path.join(work, "resources.arsc")
+        new = add_turkish(open(arsc, "rb").read(), os.path.join(HERE, "tr.json"))
+        open(arsc, "wb").write(new)
+        print("  [ok] resources.arsc Turkish strings")
 
         print("[4/6] Building APK (+ HyperOS stub classes as classes8.dex)")
         shutil.copy(os.path.join(HERE, "stubs", "hyperos-stubs.dex"), os.path.join(work, "classes8.dex"))
@@ -221,7 +247,7 @@ def main():
         shutil.copy(a.apk, raw)
         subprocess.run(["zip", "-q", "-d", raw, "META-INF/*"], check=False)
         run(["zip", "-q", "-0", "-j", raw] + [os.path.join(work, n) for n in
-             ("classes.dex", "classes2.dex", "classes3.dex", "classes8.dex")])
+             ("classes.dex", "classes2.dex", "classes3.dex", "classes6.dex", "classes8.dex", "resources.arsc")])
         aligned = os.path.join(work, "MiuiCamera.apk")
         run(["zipalign", "-f", "-P", "16", "4", raw, aligned])
 
