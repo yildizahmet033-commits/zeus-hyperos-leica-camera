@@ -1,7 +1,7 @@
 id=zeus-hyperos-leica-camera
 name=HyperOS Leica Camera for Xiaomi 12 Pro (zeus)
-version=v1.3
-versionCode=130
+version=v1.4
+versionCode=140
 author=Ahmet033
 description=HyperOS Camera 6.2 with the real Leica Authentic style and full Leica watermark for Xiaomi 12 Pro (zeus) on AOSP-based Android 17 ROMs. Ultra-wide 0.6x, tele, up to 60x zoom, 60 FPS, portrait and beautify working.
 updateJson=https://raw.githubusercontent.com/yildizahmet033-commits/zeus-hyperos-leica-camera/main/update.json

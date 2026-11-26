@@ -32,6 +32,12 @@ by **Ahmet033**
 
 \* The beautify effect is subtle in the live preview but is fully applied to the captured photo.
 
+### What's new in v1.4
+
+- The zoom bubble and the photo info now show the same focal length (0.6x 16 mm, 3.2x 77 mm, 5x 120 mm, 10x 240 mm, 20x 480 mm). Reported by MICKY.
+
+**Known issues:** video filters are not applied (the HAL ignores the filter ids of this camera version); front video beauty, Ultra HD at 0.6x; at 0.8x the bubble shows 21 mm instead of 19 mm.
+
 ### What's new in v1.3
 
 - **Focal lengths are no longer 0 mm.** The zeus HAL does not report them, so the 1x button showed "0 mm" and the default focal length list started with 0mm. The lens value is used instead (14 / 24 / 47 mm, front 25). The list is now 24 / 28 / 35 mm. The 1x button shows 29 / 36 mm instead of 28 / 35, because the app rounds the zoom to 1.2x / 1.5x.
@@ -61,7 +67,7 @@ Magisk and APatch were **not** tested. Other AOSP-based Android 17 ROMs with the
 ### Install
 
 1. If you have the Xiaomi 12 (cupid) Leica module (`cupid-miuicamera`) installed, **remove it first** and reboot.
-2. Download `zeus-hyperos-leica-camera-aosp-v1.3.zip` from [Releases](../../releases).
+2. Download `zeus-hyperos-leica-camera-aosp-v1.4.zip` from [Releases](../../releases).
 3. Install it from your root manager (KernelSU / BakaSU).
 4. Reboot.
 
@@ -76,7 +82,7 @@ Remove the module from your root manager and reboot. The package cache is cleare
 - The beautify effect is subtle in the live preview but is fully applied to the captured photo.
 - The camera app puts the watermark on rear camera photos only.
 - Leica Authentic has separate color tables for food, people, night, plants and sunrise / sunset. Only the general and plants tables were seen working in tests; the others were not triggered.
-- The module zip of v1.3 was not flashed as is: its camera code was tested on zeus with the camera built into the ROM, and its install and mount scripts are the same as v1.2.
+- The module zip of v1.4 was not flashed as is: its camera code was tested on zeus with the camera built into the ROM, and its install and mount scripts are the same as v1.3.
 - Not tested yet: Night, Slow motion, Time-lapse, Long exposure, Panorama, Supermoon, Short film, Movie effects, Clone, AI watermark.
 - Made for HyperOS Camera `1+6.2.000360.1` only; the patches use fixed offsets.
 
@@ -113,7 +119,7 @@ Thanks to everyone whose work made this possible:
 
 - **Joshabys & joaovti**: the Xiaomi 12 (cupid) MIUI / Leica camera module ([xiaomi-12-MIUI-Leica-Camera-Module](https://github.com/joaovti/xiaomi-12-MIUI-Leica-Camera-Module)). This module's skeleton, install and mount scripts and camera libraries are based on it.
 - **Joshaby**: the GPU Leica style patches and the cause of the empty watermark line ([miuicamera-cupid, patches-6.2](https://github.com/Joshabys-Xiaomi-12-Org/android_device_xiaomi_miuicamera-cupid/tree/lineage-24.0-6.6/patches-6.2)). The Monet switch (v1.3).
-- **MICKY** (Xiaomi 12 Pro | Port Support): reported the Fastshot and video bokeh crashes and pointed to the code behind both. Reported the 0 mm focal length (v1.3).
+- **MICKY** (Xiaomi 12 Pro | Port Support): reported the Fastshot and video bokeh crashes and pointed to the code behind both. Reported the 0 mm focal length (v1.3) and the bubble/photo mismatch (v1.4).
 - **Dmitry Chusovitin**: reported the green Ultra HD photos.
 - **backslashxx**: [mountify](https://github.com/backslashxx/mountify), the base of the OverlayFS mount logic.
 - **EnOt15P (4pda: EnOt.P)**: TurboOS for Xiaomi 12 Pro, used to study the HyperOS camera on zeus.
@@ -153,6 +159,12 @@ HyperOS Camera and the included camera libraries are the property of Xiaomi. Thi
 
 \* Güzelleştirme etkisi önizlemede hafif görünür, çekilen fotoğrafa ise tam olarak uygulanır.
 
+### v1.4'te yeni
+
+- Yakınlaştırma balonu ile fotoğraf bilgisi artık aynı odak uzaklığını gösteriyor (0.6x 16 mm, 3.2x 77 mm, 5x 120 mm, 10x 240 mm, 20x 480 mm). MICKY bildirdi.
+
+**Bilinen sorunlar:** video filtreleri uygulanmıyor (kamera katmanı bu sürümün filtre numaralarını tanımıyor); ön video güzelleştirme, Ultra HD 0.6x; 0.8x'te balon 19 yerine 21 mm gösteriyor.
+
 ### v1.3'te yeni
 
 - **Odak uzaklığı artık 0 mm görünmüyor.** zeus'un kamera katmanı bunu bildirmiyor; 1x düğmesinde "0 mm", varsayılan odak listesinde 0mm çıkıyordu. Artık lensin değeri kullanılıyor (14 / 24 / 47 mm, ön 25). Liste 24 / 28 / 35 mm oldu. Uygulama yakınlaştırmayı 1.2x / 1.5x'e yuvarladığı için 1x düğmesi 28 / 35 yerine 29 / 36 mm gösteriyor.
@@ -182,7 +194,7 @@ Magisk ve APatch ile **denenmedi**. Aynı zeus vendor'ını kullanan diğer AOSP
 ### Kurulum
 
 1. Xiaomi 12 (cupid) Leica modülü (`cupid-miuicamera`) kuruluysa **önce onu kaldırıp** yeniden başlat.
-2. [Releases](../../releases) bölümünden `zeus-hyperos-leica-camera-aosp-v1.3.zip` dosyasını indir.
+2. [Releases](../../releases) bölümünden `zeus-hyperos-leica-camera-aosp-v1.4.zip` dosyasını indir.
 3. Root yöneticinden (KernelSU / BakaSU) kur.
 4. Telefonu yeniden başlat.
 
@@ -197,7 +209,7 @@ Modülü root yöneticisinden kaldır ve yeniden başlat. Paket önbelleği kend
 - Güzelleştirme etkisi önizlemede hafif görünür, çekilen fotoğrafa ise tam olarak uygulanır.
 - Kamera uygulaması filigranı yalnız arka kamera fotoğraflarına ekliyor.
 - Leica Authentic'in yemek, insan, gece, bitki ve gün doğumu / batımı için ayrı renk tabloları var. Testlerde yalnız genel ve bitki tablolarının çalıştığı görüldü, diğerleri tetiklenmedi.
-- v1.3 modül zip'i olduğu hâliyle kurulup denenmedi: kamera kodu zeus'ta, kamerası ROM'a gömülü sistemde denendi; kurulum ve bağlama betikleri v1.2 ile aynı.
+- v1.4 modül zip'i olduğu hâliyle kurulup denenmedi: kamera kodu zeus'ta, kamerası ROM'a gömülü sistemde denendi; kurulum ve bağlama betikleri v1.3 ile aynı.
 - Henüz denenmeyenler: Night, Slow motion, Time-lapse, Long exposure, Panorama, Supermoon, Short film, Movie effects, Clone, AI watermark.
 - Sadece HyperOS Kamera `1+6.2.000360.1` için yapıldı; yamalar sabit konumlara uygulanır.
 
@@ -234,7 +246,7 @@ Bu çalışmayı mümkün kılan herkese teşekkürler:
 
 - **Joshabys & joaovti**: Xiaomi 12 (cupid) MIUI / Leica kamera modülü ([xiaomi-12-MIUI-Leica-Camera-Module](https://github.com/joaovti/xiaomi-12-MIUI-Leica-Camera-Module)). Bu modülün iskeleti, kurulum ve bağlama betikleri ve kamera kütüphaneleri ona dayanıyor.
 - **Joshaby**: GPU Leica stili yamaları ve boş filigran satırının nedeni ([miuicamera-cupid, patches-6.2](https://github.com/Joshabys-Xiaomi-12-Org/android_device_xiaomi_miuicamera-cupid/tree/lineage-24.0-6.6/patches-6.2)). Monet anahtarı (v1.3).
-- **MICKY** (Xiaomi 12 Pro | Port Support): Fastshot ve video bokeh çökmelerini bildirdi, ikisinin de kodunu gösterdi. 0 mm odak hatasını bildirdi (v1.3).
+- **MICKY** (Xiaomi 12 Pro | Port Support): Fastshot ve video bokeh çökmelerini bildirdi, ikisinin de kodunu gösterdi. 0 mm odak hatasını (v1.3) ve balon/fotoğraf farkını (v1.4) bildirdi.
 - **Dmitry Chusovitin**: yeşil Ultra HD fotoğraflarını bildirdi.
 - **backslashxx**: [mountify](https://github.com/backslashxx/mountify), OverlayFS bağlama mantığının temeli.
 - **EnOt15P (4pda: EnOt.P)**: Xiaomi 12 Pro için TurboOS; zeus'ta HyperOS kamerasını incelemek için kullanıldı.
