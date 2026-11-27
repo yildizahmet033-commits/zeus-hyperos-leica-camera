@@ -32,6 +32,14 @@ by **Ahmet033**
 
 \* The beautify effect is subtle in the live preview but is fully applied to the captured photo.
 
+### Screenshots
+
+| <img src="screenshots/01-ayarlar-foto-en.jpg" width="200"> | <img src="screenshots/02-genel-monet-en.jpg" width="200"> | <img src="screenshots/03-genel-monet-tr.jpg" width="200"> | <img src="screenshots/04-odak-uzakligi-tr.jpg" width="200"> |
+| --- | --- | --- | --- |
+| Settings (English) | Monet switch | Turkish UI | 24 / 28 / 35 mm |
+| <img src="screenshots/05-hizli-menu-tr.jpg" width="200"> | <img src="screenshots/06-modlar-tr.jpg" width="200"> |
+| Quick menu | More modes |
+
 ### What's new in v1.4
 
 - The zoom bubble and the photo info now show the same focal length (0.6x 16 mm, 3.2x 77 mm, 5x 120 mm, 10x 240 mm, 20x 480 mm). Reported by MICKY.
@@ -158,6 +166,14 @@ HyperOS Camera and the included camera libraries are the property of Xiaomi. Thi
 | Pro mod | ✅ |
 
 \* Güzelleştirme etkisi önizlemede hafif görünür, çekilen fotoğrafa ise tam olarak uygulanır.
+
+### Ekran görüntüleri
+
+| <img src="screenshots/01-ayarlar-foto-en.jpg" width="200"> | <img src="screenshots/02-genel-monet-en.jpg" width="200"> | <img src="screenshots/03-genel-monet-tr.jpg" width="200"> | <img src="screenshots/04-odak-uzakligi-tr.jpg" width="200"> |
+| --- | --- | --- | --- |
+| Ayarlar (İngilizce) | Monet anahtarı | Türkçe arayüz | 24 / 28 / 35 mm |
+| <img src="screenshots/05-hizli-menu-tr.jpg" width="200"> | <img src="screenshots/06-modlar-tr.jpg" width="200"> |
+| Hızlı menü | Diğer modlar |
 
 ### v1.4'te yeni
 
